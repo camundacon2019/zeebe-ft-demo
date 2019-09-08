@@ -1,0 +1,115 @@
+version: "3.7"
+
+volumes:
+    zeebe-0: {}
+    zeebe-1: {}
+    zeebe-2: {}
+
+services:
+  zeebe-0:
+    image: camunda/zeebe:${ZEEBE_DEMO_VERSION}
+    environment:
+        - ZEEBE_METRICS_HTTP_SERVER="true"
+        - ZEEBE_NODE_ID=0
+        - ZEEBE_PARTITIONS_COUNT=${ZEEBE_PARTITIONS_COUNT}
+        - ZEEBE_CLUSTER_SIZE=3
+        - ZEEBE_REPLICATION_FACTOR=3
+        - ZEEBE_CONTACT_POINTS=zeebe-2:26502,zeebe-1:26502
+        - ZEEBE_EMBED_GATEWAY="false"
+    volumes:
+        - zeebe-0:/usr/local/zeebe/data
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+
+  zeebe-1:
+    image: camunda/zeebe:${ZEEBE_DEMO_VERSION}
+    environment:
+        - ZEEBE_METRICS_HTTP_SERVER="true"
+        - ZEEBE_NODE_ID=1
+        - ZEEBE_PARTITIONS_COUNT=${ZEEBE_PARTITIONS_COUNT}
+        - ZEEBE_CLUSTER_SIZE=3
+        - ZEEBE_REPLICATION_FACTOR=3
+        - ZEEBE_CONTACT_POINTS=zeebe-0:26502,zeebe-1:26502
+        - ZEEBE_EMBED_GATEWAY="false"
+    volumes:
+        - zeebe-1:/usr/local/zeebe/data
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+
+  zeebe-2:
+    image: camunda/zeebe:${ZEEBE_DEMO_VERSION}
+    environment:
+        - ZEEBE_METRICS_HTTP_SERVER="true"
+        - ZEEBE_NODE_ID=2
+        - ZEEBE_PARTITIONS_COUNT=${ZEEBE_PARTITIONS_COUNT}
+        - ZEEBE_CLUSTER_SIZE=3
+        - ZEEBE_REPLICATION_FACTOR=3
+        - ZEEBE_CONTACT_POINTS=zeebe-1:26502
+        - ZEEBE_EMBED_GATEWAY="false"
+    volumes:
+        - zeebe-2:/usr/local/zeebe/data
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+
+  gateway:
+    image: camunda/zeebe:${ZEEBE_DEMO_VERSION}
+    ports:
+       - "26500:26500"
+    environment:
+        - ZEEBE_STANDALONE_GATEWAY=true
+        - ZEEBE_GATEWAY_CONTACT_POINT=zeebe-0:26502
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    links:
+      - zeebe-1
+    volumes:
+      - "./prometheus.yml:/etc/prometheus/prometheus.yml"
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+        - GF_SECURITY_ADMIN_PASSWORD=pass
+    depends_on:
+        - prometheus
+    ports:
+        - "3000:3000"
+    volumes:
+        - ./grafana/provisioning/:/etc/grafana/provisioning/
+        - ./grafana/conf/grafana.ini:/etc/grafana/grafana.ini
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+
+  starter:
+     image: alpine:latest
+     environment:
+        - APP=starter
+     volumes:
+        - ./load-generator:/opt/zeebe
+     command: sh -c "cd /opt/zeebe/; ./client.sh"
+
+  worker:
+     image: alpine:latest
+     environment:
+         - APP=worker
+     volumes:
+        - ./load-generator:/opt/zeebe
+     command: sh -c "cd /opt/zeebe/; ./client.sh"
