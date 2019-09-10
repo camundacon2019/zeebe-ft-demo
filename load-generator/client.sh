@@ -5,7 +5,7 @@ if [ "$APP" = "starter" ]; then
 
     while true; do
         ./zbctl create instance demo-process --address gateway:26500
-        sleep 0.1
+        sleep 0.01
     done
 elif [ $APP = "worker" ]; then
     ./zbctl create worker demo --handler cat --address gateway:26500
