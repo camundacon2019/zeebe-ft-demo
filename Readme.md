@@ -1,3 +1,20 @@
+#Demo code used in this [talk](https://www.camundacon.com/agenda/session/94358).
+
+##### Contents
+* docker-compose.yml: docker configuration for
+    * zeebe cluster with 3 brokers and 1 gateway
+    * grafana and prometheus for monitoring
+    * client application for generating work
+* client-app:
+    * starter : A java application that sends create workflow instance request at a fixed rate to the zeebe cluster.
+    * worker: A java application that activates and complete jobs
+
+#### Prerequisites
+
+* docker and docker-compose
+* Java (to build the client application)
+
+##### Steps:
 1. Start brokers and gateway  
 `docker-compose up -d zeebe-0 zeebe-1 zeebe-2 gateway`
 * Start grafana  
@@ -5,11 +22,11 @@
 * Open grafana `localhost:3000`
     * login with `admin:pass`
     * Open dashboard `Zeebe`
-* Build client application in `load-generator/`  
+* Build client application in `client-app/`  
 `mvn install`
 * Start some workload  
 `docker-compose up -d starter worker`
-* Check grafana dashboard to see that workflow instances are being created and completed. Wait for a minute, if you don't see anything immediately.
+* Check grafana dashboard to see if workflow instances are being created and completed. Wait for a minute, if you don't see anything immediately.
 * Check zeebe status  
 `docker-compose exec gateway zbctl status`  
 Or, if you have `zbctl` locally  
@@ -32,7 +49,7 @@ Brokers:
 ```
 * Pick one broker which is the leader for any partition. For example, Broker 2 is the leader for partition 2. Let's kill the broker.  
 `docker-compose stop zeebe-2`
-* Check status again. After short delay, a new leader will be elected.
+* Check status again to see a new leader.
 * Check grafana dashboard. You can observe that the new leader has started processing.
 * Restart the stopped broker by  
 `docker-compose start zeebe-2`
