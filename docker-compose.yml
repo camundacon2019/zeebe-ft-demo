@@ -101,7 +101,7 @@ services:
   starter:
      image: openjdk:8-jre-alpine
      volumes:
-        - ./load-generator:/opt/zeebe
+        - ./client-app:/opt/zeebe
      command: sh -c "java -Dapp.brokerUrl=gateway:26500 -jar /opt/zeebe/target/starter.jar"
      deploy:
       resources:
@@ -110,8 +110,7 @@ services:
 
   worker:
      image: openjdk:8-jre-alpine
-     volumes:
-        - ./load-generator:/opt/zeebe
+     volumes: client-app:/opt/zeebe
      command: sh -c "java -Dapp.brokerUrl=gateway:26500 -jar /opt/zeebe/target/worker.jar"
      deploy:
       resources:
